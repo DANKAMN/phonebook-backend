@@ -3,11 +3,23 @@ const morgan = require('morgan');
 const app = express();
 const cors = require('cors')
 
-const corsOptions = {
-  origin: 'https://phonebook-dankamn.netlify.app/', // Replace with your frontend URL
-  optionsSuccessStatus: 200,
-};
-app.use(cors(corsOptions));
+const allowedOrigins = [
+    'https://phonebook-dankamn.netlify.app',
+    'https://phonebook-dankamn.netlify.app/',
+  ];
+  
+  const corsOptions = {
+    origin: function (origin, callback) {
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+  };
+  
+  app.use(cors(corsOptions));
+
 
 // Define a custom token for Morgan to log request body for POST requests
 morgan.token('postData', (req, res) => {
