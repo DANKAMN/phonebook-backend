@@ -3,7 +3,12 @@ const morgan = require('morgan');
 const app = express();
 const cors = require('cors')
 
-app.use(cors())
+const corsOptions = {
+  origin: 'https://your-frontend-domain.com', // Replace with your frontend URL
+  optionsSuccessStatus: 200,
+};
+app.use(cors(corsOptions));
+
 // Define a custom token for Morgan to log request body for POST requests
 morgan.token('postData', (req, res) => {
   if (req.method === 'POST') {
@@ -132,6 +137,6 @@ app.delete('/api/persons/:id', (request, response) => {
 
 
 
-const PORT = 3002
+const PORT =process.env.PORT || 3002
 app.listen(PORT)
 console.log(`Server running on port ${PORT}`)
