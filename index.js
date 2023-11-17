@@ -4,7 +4,7 @@ const app = express();
 const cors = require('cors')
 
 const corsOptions = {
-  origin: 'https://your-frontend-domain.com', // Replace with your frontend URL
+  origin: 'https://phonebook-dankamn.netlify.app/', // Replace with your frontend URL
   optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
