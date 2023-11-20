@@ -4,20 +4,21 @@ const cors = require('cors')
 const morgan = require('morgan');
 const Phonebook = require('./models/phonebook')
 
-const allowedOrigins = ['https://phonebook-dankamn.netlify.app'];
+// const allowedOrigins = ['https://phonebook-dankamn.netlify.app'];
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-};
+// const corsOptions = {
+//   origin: function (origin, callback) {
+//     if (allowedOrigins.includes(origin)) {
+//       callback(null, true);
+//     } else {
+//       callback(new Error('Not allowed by CORS'));
+//     }
+//   },
+// };
 
-app.use(cors(corsOptions));
+// app.use(cors(corsOptions));
 
+app.use(cors())
 
 // Define a custom token for Morgan to log request body for POST requests
 morgan.token('postData', (req, res) => {
@@ -76,15 +77,19 @@ app.get('/api/persons', (request, response) => {
 
 
 //GET amount of everyone in the phonebook
-let amount = Phonebook.find({}).then(contact => contact.length)
-app.get('/api/persons/info', (request, response) => {
+app.get('/api/persons/info', async (request, response) => {
+  try {
+    const count = await Phonebook.countDocuments({});
     response.send(`
-    <div>
-      <p>Phonebook has the info for ${amount} persons</p>
-      <p>${time}</p>
-    </div>`
-  )
-})
+      <div>
+        <p>Phonebook has the info for ${count} persons</p>
+        <p>${time}</p>
+      </div>`
+    );
+  } catch (error) {
+    response.status(500).json({ error: 'Error occurred while counting persons' });
+  }
+});
 
 //GET a person
 app.get('/api/persons/:id', (request, response) => {
@@ -99,22 +104,25 @@ app.get('/api/persons/:id', (request, response) => {
 //POST person
 app.use(express.json())
 
-app.post('/api/persons', (request, response) => {
-  const body = request.body
+app.post('/api/persons', async (request, response) => {
+  const body = request.body;
 
-  if (body.name === undefined || body.number === undefined) {
-    return response.status(400).json({ error: 'content missing' })
+  if (!body.name || !body.number) {
+    return response.status(400).json({ error: 'Both name and number are required' });
   }
 
-  const person = new Phonebook({
-    name: body.name,
-    number: body.number,
-  })
+  try {
+    const newPerson = new Phonebook({
+      name: body.name,
+      number: String(body.number),
+    });
 
-  person.save().then(savedPerson => {
-    response.json(savedPerson)
-  })
-})
+    const savedPerson = await newPerson.save();
+    response.json(savedPerson);
+  } catch (error) {
+    response.status(500).json({ error: 'Error occurred while saving the person' });
+  }
+});
 
 //DELETE person
 // app.delete('/api/persons/:id', (request, response) => {
