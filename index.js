@@ -22,6 +22,7 @@ app.use(
   })
 );
 
+app.use(express.json())
 //Persons array
 let persons = [
     { 
@@ -50,14 +51,14 @@ const time = new Date().toUTCString()
 
 //Get hello in the home page
 app.get('/', (request, response) => {
-    response.send('<h1>Hello World!</h1>')
+  response.send('<h1>Hello World!</h1>')
 })
 
 //GET all persons in the phonebook
 app.get('/api/persons', (request, response) => {
-    Phonebook.find({}).then((persons) => {
-      response.json(persons)
-    })
+  Phonebook.find({}).then((persons) => {
+    response.json(persons)
+  })
 })
 
 
@@ -85,10 +86,40 @@ app.get('/api/persons/:id', (request, response) => {
     })
 })
 
+//PUT a person
+app.put('/api/persons/:id', async (request, response) => {
+  try {
+    const body = request.body;
+
+    if (!body || !body.name || !body.number) {
+      return response.status(400).json({ error: 'Both name and number are required' });
+    }
+
+    const updatedPerson = {
+      name: body.name,
+      number: String(body.number),
+    };
+
+    const updatedInfo = await Phonebook.findByIdAndUpdate(
+      request.params.id,
+      updatedPerson,
+      { new: true }
+    );
+
+    if (!updatedInfo) {
+      return response.status(404).json({ error: 'Person not found' });
+    }
+
+    response.json(updatedInfo);
+  } catch (error) {
+    console.error('Error updating person:', error);
+    response.status(500).json({ error: 'Error occurred while updating the person' });
+  }
+});
 
 
 //POST person
-app.use(express.json())
+
 
 app.post('/api/persons', async (request, response) => {
   const body = request.body;
@@ -128,7 +159,18 @@ app.delete('/api/persons/:id', async (request, response) => {
   }
 });
 
+//Error handling middleware
+const errorHandler = (error, request, response, next) => {
+  console.log(error.message)
 
+  if (error.name === 'CastError') {
+    response.status(400).send({ error: 'malformatted id'})
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 
 const PORT =process.env.PORT || 3002
