@@ -4,20 +4,6 @@ const cors = require('cors')
 const morgan = require('morgan');
 const Phonebook = require('./models/phonebook')
 
-// const allowedOrigins = ['https://phonebook-dankamn.netlify.app'];
-
-// const corsOptions = {
-//   origin: function (origin, callback) {
-//     if (allowedOrigins.includes(origin)) {
-//       callback(null, true);
-//     } else {
-//       callback(new Error('Not allowed by CORS'));
-//     }
-//   },
-// };
-
-// app.use(cors(corsOptions));
-
 app.use(cors())
 
 // Define a custom token for Morgan to log request body for POST requests
@@ -125,15 +111,23 @@ app.post('/api/persons', async (request, response) => {
 });
 
 //DELETE person
-// app.delete('/api/persons/:id', (request, response) => {
-//     const id = Number(request.params.id)
+app.delete('/api/persons/:id', async (request, response) => {
+  try {
+    const idToDelete = request.params.id;
+    const deletedPerson = await Phonebook.findByIdAndDelete(idToDelete);
 
-//     persons = persons.filter(person => person.id !== id) 
+    if (deletedPerson) {
+      console.log(`Deleted person: ${deletedPerson}`);
+      response.status(204).end(); // Respond with a 204 No Content if deletion is successful
+    } else {
+      response.status(404).json({ error: 'Person not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting person:', error);
+    response.status(500).json({ error: 'Error occurred while deleting the person' });
+  }
+});
 
-//     console.log('Persons after deletion:', persons);
-
-//     response.status(204).end()
-// })
 
 
 
