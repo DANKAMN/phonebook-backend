@@ -2,8 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors')
 const morgan = require('morgan');
-
-
+const Phonebook = require('./models/phonebook')
 
 const allowedOrigins = ['https://phonebook-dankamn.netlify.app'];
 
@@ -62,8 +61,6 @@ let persons = [
 
 const time = new Date().toUTCString()
 
-
-
 //Get hello in the home page
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
@@ -71,29 +68,30 @@ app.get('/', (request, response) => {
 
 //GET all persons in the phonebook
 app.get('/api/persons', (request, response) => {
-    response.json(persons)
+    Phonebook.find({}).then((persons) => {
+      response.json(persons)
+    })
 })
 
+
+
 //GET amount of everyone in the phonebook
+let amount = Phonebook.find({}).then(contact => contact.length)
 app.get('/api/persons/info', (request, response) => {
-    response.send(`<div>
-                    <p>Phonebook has the info for ${persons.length} persons</p>
-                    <p>${time}</p>
-                </div>`
-                )
+    response.send(`
+    <div>
+      <p>Phonebook has the info for ${amount} persons</p>
+      <p>${time}</p>
+    </div>`
+  )
 })
 
 //GET a person
 app.get('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
-
-    const person = persons.find((person) => person.id === id)
-
-    if(person) {
-        response.json(person)
-    } else {
-        response.status(404).end()
-    }
+  Phonebook.findById(request.params.id)
+    .then((person) => {
+      response.json(person)
+    })
 })
 
 
@@ -101,50 +99,33 @@ app.get('/api/persons/:id', (request, response) => {
 //POST person
 app.use(express.json())
 
-const generateID = () => {
-    const maxId =  persons.length > 0 ? Math.max(...persons.map(p => p.id)) : 0
-    return maxId + 1
-}
-
 app.post('/api/persons', (request, response) => {
-    const body = request.body
+  const body = request.body
 
-    const name =  persons.some((person) => person.name === body.name)
+  if (body.name === undefined || body.number === undefined) {
+    return response.status(400).json({ error: 'content missing' })
+  }
 
-    if(!body.name) {
-        return response.status(400).json({
-            error: "name or number is missing"
-        })
-    } else if(!body.number) {
-        return response.status(400).json({
-            error: "name or number is missing"
-        })
-    } else if(name) {
-        return response.status(400).json({
-            error: "name must be unique"
-        })
-    }
+  const person = new Phonebook({
+    name: body.name,
+    number: body.number,
+  })
 
-    const person = {
-        id: generateID(),
-        name: body.name,
-        number: body.number
-    }
-
-    persons = persons.concat(person)
-    response.json(person)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
 //DELETE person
-app.delete('/api/persons/:id', (request, response) => {
-    const id = Number(request.params.id)
+// app.delete('/api/persons/:id', (request, response) => {
+//     const id = Number(request.params.id)
 
-    persons = persons.filter(person => person.id !== id) 
+//     persons = persons.filter(person => person.id !== id) 
 
-    console.log('Persons after deletion:', persons);
+//     console.log('Persons after deletion:', persons);
 
-    response.status(204).end()
-})
+//     response.status(204).end()
+// })
 
 
 
